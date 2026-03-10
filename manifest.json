@@ -1,6 +1,6 @@
 {
-"name": "競馬ランダムツール",
-"short_name": "競馬ツール",
+"name": "完全天任せ当選馬メーカー",
+"short_name": "当選馬メーカー（天任せ）",
 "start_url": "index.html",
 "display": "standalone",
 "background_color": "#ffffff",
