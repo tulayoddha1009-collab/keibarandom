@@ -5,45 +5,43 @@
 <title>当選馬メーカー</title>
 
 <style>
-
-body{
-font-family:sans-serif;
-padding:20px;
-max-width:400px;
-margin:auto;
+body {
+font-family: sans-serif;
+padding: 20px;
+max-width: 400px;
+margin: auto;
 }
 
-label{
-font-size:18px;
-display:block;
-margin-top:15px;
+label {
+font-size: 18px;
+display: block;
+margin-top: 15px;
 }
 
-input{
-font-size:18px;
-padding:8px;
-width:100%;
-box-sizing:border-box;
-margin-top:5px;
+input {
+font-size: 18px;
+padding: 10px;
+width: 100%;
+box-sizing: border-box;
+margin-top: 5px;
 }
 
-h2{
-font-size:28px;
-text-align:center;
-margin-top:25px;
+h2 {
+font-size: 28px;
+text-align: center;
+margin-top: 25px;
 }
 
-button{
-font-size:18px;
-padding:12px;
-width:100%;
-margin-top:15px;
+button {
+font-size: 18px;
+padding: 12px;
+width: 100%;
+margin-top: 15px;
 }
-
 
 #results{
 margin-top:20px;
-font-size:20px;
+font-size:24px;
 }
 
 #results p{
@@ -59,56 +57,14 @@ text-align:right;
 
 .value{
 display:inline-block;
-width:2ch;
+width:3ch;
 text-align:right;
 }
-
-.raceLabel{
-font-size:18px;
-display:block;
-margin-top:15px;
-}
-
-.raceSelect{
-display:block;
-margin:auto;
-margin-top:8px;
-font-size:18px;
-padding:12px;
-width:100%;
-text-align:center;
-font-weight:bold;
-border-radius:6px;
-}
-
-.oddsRow{
-display:flex;
-gap:10px;
-margin-top:5px;
-align-items:center;
-}
-
-.oddsRow span{
-width:40px;
-}
-
-.resetBtn{
-background:#e74c3c;
-color:white;
-font-weight:bold;
-border-radius:6px;
-}
-
-.resetBtn:hover{
-background:#c0392b;
-}
-
 
 </style>
 </head>
 
 <body>
-
 
 <h2>当選馬メーカー</h2>
 
@@ -122,382 +78,128 @@ background:#c0392b;
 <input type="text" id="place" placeholder="場所nnR">
 </label>
 
-
-
-
-<label class="raceLabel">荒れ度</label>
-
-<select id="raceType" class="raceSelect" onchange="updateRaceColor()">
-<option value="auto">入力されたオッズから自動判定</option>
-<option value="1.0">固い</option>
-<option value="0.8">並み</option>
-<option value="0.7">荒れる</option>
-<option value="0.6">混戦</option>
-<option value="0.5">大波乱</option>
-</select>
-
-
+<!-- 最小値は普段使わないので非表示
+<label>
+最小値
+<input type="number" id="min" min="1">
 </label>
+-->
 
 <label>
 エントリー数
-<input type="number" id="entry" min="1">
+<input type="number" id="max" min="1">
 </label>
 
-<button onclick="createOddsInputs()">オッズ入力作成</button>
+<label>
+取消①
+<input type="number" id="cancel1" min="1" placeholder="取消がなければ入力不要">
+</label>
 
-<div id="oddsArea"></div>
+<label>
+取消②
+<input type="number" id="cancel2" min="1" placeholder="取消がなければ入力不要">
+</label>
 
-<button onclick="generate()">レース生成</button>
-<button onclick="runSimulation()">AIシミュレーション</button>
+<label>
+取消③
+<input type="number" id="cancel3" min="1" placeholder="取消がなければ入力不要">
+</label>
+
+<button onclick="generate()">生成</button>
+<button onclick="resetResults()">リセット</button>
 
 
-
-<h3>レース結果</h3>
-<div id="raceResults"></div>
-
-<h3>AIシミュレーション</h3>
-<div id="aiResults"></div>
-
-
-<button class="resetBtn" onclick="resetRace()">生成したレースのみリセット</button>
-
-<button class="resetBtn" onclick="resetAI()">AIシミュレーションのみリセット</button>
-
-<button class="resetBtn" onclick="resetAll()">全リセット</button>
+　<div id="remain"></div>
+　<div id="results"></div>
+　<div id="results"></div>
 
 
 <script>
 
-let horses=[];
-let result=[];
-let index=0;
+let numbers = [];
+let index = 0;
+let initialized = false;
 
-function createOddsInputs(){
+function initialize(min, max, cancelList) {
 
-const entry=parseInt(document.getElementById("entry").value);
+numbers = [];
 
-if(isNaN(entry)||entry<1){
-alert("エントリー数を入力してください");
+for (let i = min; i <= max; i++) {
+if (!cancelList.includes(i)) {
+numbers.push(i);
+}
+}
+
+shuffle(numbers);
+
+index = 0;
+initialized = true;
+}
+
+function shuffle(array) {
+
+for (let i = array.length - 1; i > 0; i--) {
+
+const j = Math.floor(Math.random() * (i + 1));
+
+[array[i], array[j]] = [array[j], array[i]];
+
+}
+
+}
+
+function generate() {
+
+const min = 1;
+const max = parseInt(document.getElementById("max").value);
+
+if (isNaN(max) || max < min) {
+alert("正しいエントリー数を入力してください");
 return;
 }
 
-const area=document.getElementById("oddsArea");
-area.innerHTML="";
+const cancel1 = parseInt(document.getElementById("cancel1").value);
+const cancel2 = parseInt(document.getElementById("cancel2").value);
+const cancel3 = parseInt(document.getElementById("cancel3").value);
 
-for(let i=1;i<=entry;i++){
+const cancelList = [cancel1, cancel2, cancel3].filter(n => !isNaN(n));
 
-const div=document.createElement("div");
-div.className="oddsRow";
-
-div.innerHTML=
-`<span>${i}番</span>
-<input type="number" step="0.1" id="odds${i}" placeholder="オッズ">
-<label><input type="checkbox" id="cancel${i}">取消</label>`;
-
-area.appendChild(div);
-
+if (!initialized) {
+initialize(min, max, cancelList);
 }
 
-}
-
-function buildHorseData(){
-
-horses=[];
-
-const entry=parseInt(document.getElementById("entry").value);
-
-for(let i=1;i<=entry;i++){
-
-const cancel=document.getElementById(`cancel${i}`).checked;
-
-if(cancel) continue;
-
-const odds=parseFloat(document.getElementById(`odds${i}`).value);
-
-if(isNaN(odds)||odds<=0){
-alert(`${i}番のオッズが不正です`);
-return false;
-}
-
-horses.push({
-num:i,
-odds:odds
-});
-
-}
-
-if(horses.length===0){
-alert("出走馬がいません");
-return false;
-}
-
-return true;
-
-}
-
-function weightedRandom(pool){
-
-let total=0;
-
-for(let h of pool){
-total+=h.weight;
-}
-
-const r=Math.random()*total;
-
-let sum=0;
-
-for(let h of pool){
-
-sum+=h.weight;
-
-if(r<=sum){
-return h;
-}
-
-}
-
-}
-
-function getRacePower(){
-
-const mode=document.getElementById("raceType").value;
-
-if(mode!=="auto") return parseFloat(mode);
-
-const fav=Math.min(...horses.map(h=>h.odds));
-
-if(fav<1.8) return 1.0;
-if(fav<3) return 0.8;
-if(fav<5) return 0.7;
-if(fav<10) return 0.6;
-
-return 0.5;
-
-}
-
-function updateRaceColor(){
-
-const select=document.getElementById("raceType");
-const v=select.value;
-
-if(v==="auto"){
-select.style.background="#e0e0e0";
-select.style.color="black";
-}
-
-else if(v==="1.0"){
-select.style.background="#ffb347";
-select.style.color="black";
-}
-
-else if(v==="0.8"){
-select.style.background="#deb887";
-select.style.color="black";
-}
-
-else if(v==="0.7"){
-select.style.background="#4b0082";
-select.style.color="white";
-}
-
-else if(v==="0.6"){
-select.style.background="#8b008b";
-select.style.color="white";
-}
-
-else if(v==="0.5"){
-select.style.background="#000000";
-select.style.color="white";
-}
-
-}
-
-
-function generate(){
-
-if(index===0){
-
-if(!buildHorseData()) return;
-
-const power=getRacePower();
-
-for(let h of horses){
-
-const ability=Math.pow(1/h.odds,power);
-const form=0.8+Math.random()*0.4;
-
-h.weight=ability*form;
-
-}
-
-result=[];
-let pool=[...horses];
-
-while(pool.length>0){
-
-const winner=weightedRandom(pool);
-
-result.push(winner);
-
-pool.splice(pool.indexOf(winner),1);
-
-}
-
-}
-
-if(index>=result.length){
-alert("すべて表示しました");
+if (index >= numbers.length) {
+alert("すべての馬が出ました");
 return;
 }
 
-const horse=result[index];
-
-const p=document.createElement("p");
-
-p.innerHTML=
-`<span class="rank">${index+1}着</span>
-<span class="value">${horse.num}</span>`;
-
-document.getElementById("raceResults").appendChild(p);
-
+const value = numbers[index];
+const rank = index + 1;
 index++;
 
-}
+const date = document.getElementById("date").value;
+const place = document.getElementById("place").value;
 
-function simulateRace(){
+const p = document.createElement("p");
 
-const power=getRacePower();
+p.innerHTML = `<span class="rank">${rank}着</span> <span class="value">${value}</span>`;
+document.getElementById("results").appendChild(p);
 
-let stats={};
-
-for(let h of horses){
-
-stats[h.num]={
-win:0,
-top2:0,
-top3:0
-};
+document.getElementById("remain").textContent =
+`残り：${numbers.length - index}頭`;
 
 }
 
-for(let n=0;n<1000;n++){
+function resetResults() {
 
-let pool=[];
+numbers = [];
+index = 0;
+initialized = false;
 
-for(let h of horses){
-
-const ability=Math.pow(1/h.odds,power);
-const form=0.8+Math.random()*0.4;
-
-pool.push({
-num:h.num,
-weight:ability*form
-});
+document.getElementById("results").innerHTML = "";
+document.getElementById("remain").textContent = "";
 
 }
-
-let order=[];
-
-while(pool.length){
-
-const w=weightedRandom(pool);
-
-order.push(w.num);
-
-pool.splice(pool.indexOf(w),1);
-
-}
-
-stats[order[0]].win++;
-
-stats[order[0]].top2++;
-if(order[1]!==undefined) stats[order[1]].top2++;
-
-stats[order[0]].top3++;
-if(order[1]!==undefined) stats[order[1]].top3++;
-if(order[2]!==undefined) stats[order[2]].top3++;
-
-}
-
-return stats;
-
-}
-
-function runSimulation(){
-
-if(!buildHorseData()) return;
-
-const stats=simulateRace();
-
-const div=document.getElementById("aiResults");
-
-div.innerHTML="<h4>予測</h4>";
-
-for(let num in stats){
-
-const s=stats[num];
-
-const win=(s.win/10).toFixed(1);
-const top2=(s.top2/10).toFixed(1);
-const top3=(s.top3/10).toFixed(1);
-
-div.innerHTML+=`
-<p>
-${num}番
-勝率 ${win}%
-連対 ${top2}%
-複勝 ${top3}%
-</p>
-`;
-
-}
-
-}
-
-function resetResults(){
-
-horses=[];
-result=[];
-index=0;
-
-document.getElementById("results").innerHTML="";
-document.getElementById("oddsArea").innerHTML="";
-
-}
-
-function resetAI(){
-
-document.getElementById("aiResults").innerHTML="";
-
-}
-
-function resetRace(){
-
-result=[];
-index=0;
-
-document.getElementById("raceResults").innerHTML="";
-
-}
-
-function resetAll(){
-
-horses=[];
-result=[];
-index=0;
-
-document.getElementById("raceResults").innerHTML="";
-document.getElementById("aiResults").innerHTML="";
-
-document.getElementById("place").value="";
-document.getElementById("entry").value="";
-document.getElementById("oddsArea").innerHTML="";
-
-}
-
-updateRaceColor();
 
 </script>
 
